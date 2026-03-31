@@ -23,16 +23,16 @@ SYSTEM_PROMPT = """你是一个严谨的发票与单据数据提取专家。
 {
   "invoices": [
     {
-      "invoice_number": "发票号码(必需，如Y26A0035，若无则为null)",
-      "invoice_date": "YYYY-MM-DD (若无或者是1970-01-01这种幻觉日期，则必须返回null)",
-      "currency": "货币符号(如USD, RMB等)",
-      "total_amount": "含税最终总金额(纯数字，如果是分页发票的小计Subtotal则请返回null，只要全发票最终的Total)",
+      "invoice_number": "发票号码",
+      "invoice_date": "YYYY-MM-DD",
+      "currency": "货币",
+      "total_amount": "含税总金额(纯数字)",
       "vendor_name": "销方/收款方名称",
       "purchaser_name": "购买方/付款方名称",
       "items": [
         {
-           "description": "商品描述表述(务必尽量包含完整料号和品名)",
-           "quantity": "数量(纯数字即可)",
+           "description": "商品描述/料号",
+           "quantity": "数量(纯数字)",
            "unit_price": "单价(纯数字)",
            "amount": "该行总价(纯数字)"
         }
@@ -40,12 +40,11 @@ SYSTEM_PROMPT = """你是一个严谨的发票与单据数据提取专家。
     }
   ]
 }
-如果图片不是发票或没有任何有效发票信息，请返回 {"invoices": []}。
-【极其重要的规则，违反将导致系统严重错误】：
-1. 绝对严禁把发票底部的“TOTAL”、“PACKAGE(S)”、“总计”、“运费”等汇总统计行当做商品明细(items)提取！
-2. 【禁止伪造数据】只有当图片上某一行【同时明确印有】物料品名、数量、以及【单价】时，才能算作一个合法明细放入items。如果某行（如合计行）本身在图片上【并没有印着单价】，绝对禁止你擅自拷贝上一行的单价强行补齐！直接跳过该行，不加入items！
-3. 请仔细对齐每一行的列，不要错位。
-4. 你当前看到的可能只是多页发票的一页片段。只有在页面末尾明确标记最终合计时，才提取到 total_amount 中，否则为 null。"""
+如果找不到某项，请赋值为 null。
+【重要规则】：
+1. 绝对不要把发票底部的“TOTAL”、“PACKAGE(S)”、“总计”等汇总行当作商品放入items！如果该行在图片上没有明确的单价，直接跳过！
+2. 不要擅自将上一行的单价拷贝到下一行！
+3. 请仔细对齐图片中每一行的列，不要错位。
 
 def encode_image_base64(image_path):
     with open(image_path, "rb") as f:
@@ -102,7 +101,18 @@ def process_invoice_task(self, file_path: str, filename: str):
             content = content.split("```json")[-1].split("```")[0]
         elif "```" in content:
             content = content.split("```")[-1].split("```")[0]
-        return idx, json.loads(content.strip())
+            
+        try:
+            parsed_data = json.loads(content.strip())
+        except Exception as e:
+            try:
+                import json_repair
+                parsed_data = json_repair.loads(content.strip())
+            except Exception as e2:
+                print(f"Failed to repair JSON on page {idx}: {str(e2)}\nRaw content: {content}")
+                parsed_data = {"invoices": []}
+                
+        return idx, parsed_data
 
     page_results = []
     completed = 0

@@ -16,7 +16,7 @@ load_dotenv()
 
 app = FastAPI(
     title="智能发票混合识别系统 API",
-    description="基于 Qwen3.5 VLM 的发票 OCR 识别",
+    description="基于企业级视觉大模型的发票 OCR 识别",
     version="1.0.0"
 )
 

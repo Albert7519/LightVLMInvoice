@@ -74,7 +74,7 @@ def process_invoice_task(self, file_path: str, filename: str):
     else:
         raise ValueError(f"不受支持的文件类型: {ext}")
         
-    self.update_state(state='PROCESSING', meta={'progress': 30, 'message': f'文件拆分为 {len(image_paths)} 张图像，即将启动多线程并发提取（Qwen3.5)'})
+    self.update_state(state='PROCESSING', meta={'progress': 30, 'message': f'文件拆分为 {len(image_paths)} 张图像，即将启动多线程并发提取'})
 
     def fetch_page(idx, path):
         base64_img = encode_image_base64(path)

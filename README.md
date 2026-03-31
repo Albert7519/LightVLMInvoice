@@ -9,7 +9,7 @@
 - **前端 (Frontend)**: React + Vite + TypeScript + TailwindCSS。生产环境通过 Nginx 运行代理。
 - **后端 (Backend)**: FastAPI (高并发 HTTP 框架)。
 - **任务调度**: Celery + Redis（用于隔离长耗时的页面切割和 VLM 推理任务）。
-- **推理引擎**: 基于 vLLM 部署的本地大模型（默认兼容 Qwen-VL 等具备视觉理解能力的小参数/量化模型，保障显存可控）。
+- **推理引擎**: 基于 vLLM 部署的本地视觉大模型，系统当前默认内置使用 `cyankiwi/Qwen3.5-2B-AWQ-BF16-INT8` 量化模型，兼具极低的显存占用与极强的版式识别能力。
 - **容错增强**: 使用 `json_repair` 防止因模型输出偶发的 JSON 语法错误（如缺少引号、截断等）导致的数据丢弃。
 
 ## 项目结构
@@ -26,7 +26,10 @@
 │   ├── vite.config.ts        # Vite 构建与开发端口代理配置
 │   ├── nginx.conf            # 生产环境前端容器内的反向代理配置
 │   └── package.json          # Node 依赖清单
-└── docker-compose.yml        # 全局容器编排文件
+└── docker/                   # 容器化部署与统筹目录
+    ├── docker-compose.yml    # 全局容器编排文件
+    ├── backend.Dockerfile    # 后端环境构建镜像打包配置
+    └── frontend.Dockerfile   # 前端环境构建镜像打包配置
 ```
 
 ## 核心特性
@@ -53,7 +56,8 @@
 2. **构建并启动所有服务**
    此命令将一次性启动 `vllm`, `redis`, `celery`, `backend`, 以及 `frontend` 五个容器。
    ```bash
-   cd docker \docker-compose up -d --build\docker-compose up -d --build docker-compose up -d --build
+   cd docker
+   docker-compose up -d --build
    ```
 
 3. **访问服务**
@@ -63,11 +67,11 @@
 ### 端口映射说明
 - 前端 Web 界面服务映射在宿主机的 `8002` 端口。
 - 后端 FastAPI 服务映射在宿主机的 `8005` 端口。
-若遇到端口冲突，可直接在 `docker-compose.yml` 中修改。
+若遇到端口冲突，可直接在 `docker/docker-compose.yml` 中修改。
 
 ## 二次开发指南
 
-- **更换 VLM 模型**: 如果需要使用如 LLaVA，Qwen-VL-Chat等其他模型，请在 `docker-compose.yml` 的 `vllm` 启动参数中修改模型路径，并视情况在 `backend/tasks.py` 中更新系统 Prompt（大模型提示词）以适配该模型的指令微调特性。
+- **更换 VLM 模型**: 如果需要使用如 LLaVA 等其他模型，请在 `docker/docker-compose.yml` 的 `vllm` 启动参数中直接修改模型名称，并视情况在 `backend/tasks.py` 中更新系统 Prompt（大模型提示词）以适配该模型的指令微调格式。
 - **本地调试前端**:
   ```bash
   cd frontend

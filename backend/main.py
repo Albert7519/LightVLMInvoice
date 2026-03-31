@@ -81,41 +81,86 @@ async def get_task_status(task_id: str):
 
 @app.post("/api/v1/invoices/export")
 async def export_invoices(request: Request):
-    """接收前端核实后的发票 JSON，生成结构化 Excel 表格(Excel 流) 下载"""
+    """接收前端核实后的发票 JSON，生成结构化双表 Excel 表格(Excel 流) 下载"""
     invoice_data = await request.json()
     try:
-        rows = []
+        summary_rows = []
+        detail_rows = []
+        
         for task_res in invoice_data:
             invoices = task_res.get("invoices", [])
             for data in invoices:
-                base_row = {
+                inv_no = data.get("invoice_number", "")
+                # 主表数据 (每一张发票一条主表记录)
+                summary_rows.append({
                     "原文件名称": task_res.get("file_name", ""),
-                    "发票号码": data.get("invoice_number", ""),
+                    "发票号码": inv_no,
                     "发票日期": data.get("invoice_date", ""),
                     "销售方(收款)": data.get("vendor_name", ""),
                     "购买方(付款)": data.get("purchaser_name", ""),
                     "货币": data.get("currency", ""),
                     "总含税金额": data.get("total_amount", ""),
-                }
+                })
+                
+                # 明细表数据 (发票内包含的各种明细内容)
                 items = data.get("items", [])
-                if not items:
-                    rows.append(base_row)
-                else:
+                if items:
                     for item in items:
-                        row = base_row.copy()
-                        row.update({
+                        detail_rows.append({
+                            "归属发票号码": inv_no,
+                            "原文件名称": task_res.get("file_name", ""),
                             "商品名称": item.get("description", ""),
                             "数量": item.get("quantity", ""),
-                            "单价": item.get("unit_price", ""),
-                            "金额": item.get("amount", "")
+                            "单价(不含/含税)": item.get("unit_price", ""),
+                            "明细总金额": item.get("amount", "")
                         })
-                        rows.append(row)
-                    
-        df = pd.DataFrame(rows)
+
+        df_summary = pd.DataFrame(summary_rows)
+        # 如果没有明细数据，依然提供具有正确表头的空白明细表
+        if not detail_rows:
+            df_details = pd.DataFrame(columns=["归属发票号码", "原文件名称", "商品名称", "数量", "单价(不含/含税)", "明细总金额"])
+        else:
+            df_details = pd.DataFrame(detail_rows)
+
         stream = io.BytesIO()
         with pd.ExcelWriter(stream, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='发票提取明细')
+            df_summary.to_excel(writer, index=False, sheet_name='发票汇总表')
+            df_details.to_excel(writer, index=False, sheet_name='商品明细表')
             
+            # 简单的列宽自适应
+            workbook = writer.book
+            
+            # 调整发票汇总表列宽
+            ws_summary = writer.sheets['发票汇总表']
+            for col in ws_summary.columns:
+                max_length = 0
+                column = col[0].column_letter
+                for cell in col:
+                    try:
+                        # 对于由于包含中文字符导致计算有些偏差的情况，乘以 1.5 缓冲一下
+                        cell_len = len(str(cell.value).encode('gbk')) if cell.value else 0
+                        if cell_len > max_length:
+                            max_length = cell_len
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 60) # 设置一个最大宽度60，防止无限拉长
+                ws_summary.column_dimensions[column].width = adjusted_width
+                
+            # 调整商品明细表列宽
+            ws_details = writer.sheets['商品明细表']
+            for col in ws_details.columns:
+                max_length = 0
+                column = col[0].column_letter
+                for cell in col:
+                    try:
+                        cell_len = len(str(cell.value).encode('gbk')) if cell.value else 0
+                        if cell_len > max_length:
+                            max_length = cell_len
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 80)
+                ws_details.column_dimensions[column].width = adjusted_width
+
         stream.seek(0)
         headers = {
             'Content-Disposition': 'attachment; filename="invoices_export.xlsx"'

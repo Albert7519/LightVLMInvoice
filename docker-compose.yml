@@ -1,0 +1,110 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vllm:
+    image: vllm/vllm-openai:v0.18.1-cu130
+    ports:
+      - "8000:8000"
+    environment:
+      - VLLM_USE_MODELSCOPE=true
+      - VLLM_GPU_MEMORY_UTILIZATION=0.9
+    command: >
+      python -m vllm.entrypoints.openai.api_server
+      --model cyankiwi/Qwen3.5-2B-AWQ-BF16-INT8
+      --host 0.0.0.0
+      --port 8000
+      --gpu-memory-utilization 0.9
+      --max-model-len 32768
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
+      - modelscope_cache:/root/.modelscope
+    device_requests:
+      - driver: nvidia
+        count: all
+        capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - VLLM_API_BASE=http://vllm:8000/v1
+      - VLLM_API_KEY=EMPTY
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8080
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+      - ./logs/backend:/app/backend/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      vllm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  celery:
+    build:
+      context: ./backend
+    command: celery -A celery_app worker --loglevel=info --pool=solo --concurrency=1
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - VLLM_API_BASE=http://vllm:8000/v1
+      - VLLM_API_KEY=EMPTY
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+      - ./logs/celery:/app/backend/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      vllm:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: /api/v1/invoices
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis_data:
+  huggingface_cache:
+  modelscope_cache:

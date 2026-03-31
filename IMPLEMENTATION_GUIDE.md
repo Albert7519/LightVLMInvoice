@@ -157,7 +157,7 @@ make clean
 
 #### P2c：vLLM 容器配置
 
-**方案**：使用官方 `vllm/vllm-openai:v0.6.x-gpu` 镜像
+**方案**：使用官方 `vllm/vllm-openai:v0.18.1-cu130` 镜像
 
 **环境变量**：
 - `VLLM_USE_MODELSCOPE=true`（国内镜像）

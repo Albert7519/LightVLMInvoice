@@ -44,7 +44,7 @@ SYSTEM_PROMPT = """你是一个严谨的发票与单据数据提取专家。
 【重要规则】：
 1. 绝对不要把发票底部的“TOTAL”、“PACKAGE(S)”、“总计”等汇总行当作商品放入items！如果该行在图片上没有明确的单价，直接跳过！
 2. 不要擅自将上一行的单价拷贝到下一行！
-3. 请仔细对齐图片中每一行的列，不要错位。
+3. 请仔细对齐图片中每一行的列，不要错位。"""
 
 def encode_image_base64(image_path):
     with open(image_path, "rb") as f:

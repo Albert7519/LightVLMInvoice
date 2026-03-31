@@ -1,0 +1,29 @@
+# Python 3.11+ required
+# Core framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+
+# Async task processing
+celery>=5.3.6
+redis>=5.0.3
+
+# PDF handling
+pypdfium2>=4.28.0
+
+# LLM & Model inference
+vllm>=0.6.0
+modelscope>=1.14.0
+openai>=1.14.0
+
+# Data processing & export
+openpyxl>=3.1.2
+pandas>=2.2.1
+
+# Configuration management
+python-dotenv>=1.0.0
+
+# Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.24.0

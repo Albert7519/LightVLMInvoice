@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+
+# Node
+node_modules/
+
+# Build outputs
+frontend/dist/
+
+# Logs
+*.log
+logs/
+
+# Local env files
+backend/.env
+frontend/.env
+
+# Runtime data
+backend/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db

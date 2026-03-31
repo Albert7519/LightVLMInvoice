@@ -146,7 +146,7 @@ function App() {
           智能发票批量识别系统
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
-          基于 Qwen3.5多线程 + VLM计算机视觉。支持批量PDF/图片文件，无感去重并处理多页跨页合并逻辑。
+          基于企业级多线程视觉大模型提取。支持批量PDF/图片文件，无感智能处理多页跨页合并逻辑。
         </p>
       </header>
 

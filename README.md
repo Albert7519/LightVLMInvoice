@@ -53,7 +53,7 @@
 2. **构建并启动所有服务**
    此命令将一次性启动 `vllm`, `redis`, `celery`, `backend`, 以及 `frontend` 五个容器。
    ```bash
-   docker-compose up -d --build
+   cd docker \docker-compose up -d --build\docker-compose up -d --build docker-compose up -d --build
    ```
 
 3. **访问服务**

@@ -11,7 +11,9 @@ COPY . .
 ARG VITE_API_BASE=/api/v1/invoices
 ENV VITE_API_BASE=$VITE_API_BASE
 
-RUN npm run build
+# Run TypeScript and Vite builds directly to avoid permission issues with bin stubs
+RUN node ./node_modules/typescript/bin/tsc -b && \
+  node ./node_modules/vite/bin/vite.js build
 
 # Stage 2: Serve
 FROM nginx:1.25-alpine

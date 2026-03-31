@@ -5,8 +5,7 @@ FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 python3.11-venv python3.11-dev \
     python3-pip git wget curl ca-certificates \
-    build-essential libnccl-dev pkg-config \
-    libpdfium-dev libpoppler-cpp-dev libpoppler-dev \
+    build-essential pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.11 as default
@@ -31,7 +30,6 @@ FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 # Install minimal runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
-    libpdfium0 libpoppler-cpp0 libpoppler0c2 \
     curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

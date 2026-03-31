@@ -29,6 +29,10 @@ frontend/.env
 # Runtime data
 backend/uploads/
 
+# Test files and fixtures
+testFiles/
+tests/fixtures/
+
 # OS files
 .DS_Store
 Thumbs.db

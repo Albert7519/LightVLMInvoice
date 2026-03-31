@@ -56,6 +56,8 @@ docker-compose up -d
 open http://localhost
 ```
 
+vLLM 镜像版本：`vllm/vllm-openai:v0.18.1-cu130`
+
 ### 方案 C：手动配置
 
 详见：[LOCAL_SETUP.md](LOCAL_SETUP.md)
@@ -94,7 +96,9 @@ LocalllmOcrMK2/
     ├── IMPLEMENTATION_GUIDE.md  # 详尽实施指南
     ├── LOCAL_SETUP.md           # 本地开发指南
     ├── PHASE1_COMPLETION_REPORT.md # Phase 1 完成报告
-    └── DEPLOYMENT.md            # 部署指南（准备中）
+   ├── DEPLOYMENT.md            # 部署指南
+   ├── GPU_TUNING.md            # GPU 调优指南
+   └── PRODUCTION_CHECKLIST.md  # 生产检查清单
 ```
 
 ---
@@ -307,6 +311,9 @@ python backend/check_gpu.py
 | [LOCAL_SETUP.md](LOCAL_SETUP.md) | 本地开发环境配置 |
 | [PHASE1_COMPLETION_REPORT.md](PHASE1_COMPLETION_REPORT.md) | Phase 1 完成情况 |
 | [PHASE1_LOCAL_VERIFICATION.md](PHASE1_LOCAL_VERIFICATION.md) | 本地验证指引 |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | 部署与运维指南 |
+| [GPU_TUNING.md](GPU_TUNING.md) | GPU 调优与参数说明 |
+| [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md) | 上线检查清单 |
 
 ---
 

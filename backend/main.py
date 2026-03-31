@@ -4,7 +4,7 @@ import uuid
 import pandas as pd
 from typing import List
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from celery.result import AsyncResult
@@ -80,35 +80,36 @@ async def get_task_status(task_id: str):
         return {"code": 500, "status": "FAILED", "progress": 0, "result": str(res.info)}
 
 @app.post("/api/v1/invoices/export")
-async def export_invoices(invoice_data: list):
+async def export_invoices(request: Request):
     """接收前端核实后的发票 JSON，生成结构化 Excel 表格(Excel 流) 下载"""
+    invoice_data = await request.json()
     try:
         rows = []
-        for inv in invoice_data:
-            data = inv.get("invoice_data", {})
-            base_row = {
-                "文件名称": inv.get("file_name", ""),
-                "发票号码": data.get("invoice_number", ""),
-                "发票日期": data.get("invoice_date", ""),
-                "销售方(收款)": data.get("vendor_name", ""),
-                "购买方(付款)": data.get("purchaser_name", ""),
-                "货币": data.get("currency", ""),
-                "总含税金额": data.get("total_amount", ""),
-            }
-            items = data.get("items", [])
-            # 处理多层嵌套：将 Items (商品条目) 摊平映射至列中。即便商品为空也建立根节点条目。
-            if not items:
-                rows.append(base_row)
-            else:
-                for item in items:
-                    row = base_row.copy()
-                    row.update({
-                        "商品名称": item.get("description", ""),
-                        "数量": item.get("quantity", ""),
-                        "单价": item.get("unit_price", ""),
-                        "金额": item.get("amount", "")
-                    })
-                    rows.append(row)
+        for task_res in invoice_data:
+            invoices = task_res.get("invoices", [])
+            for data in invoices:
+                base_row = {
+                    "原文件名称": task_res.get("file_name", ""),
+                    "发票号码": data.get("invoice_number", ""),
+                    "发票日期": data.get("invoice_date", ""),
+                    "销售方(收款)": data.get("vendor_name", ""),
+                    "购买方(付款)": data.get("purchaser_name", ""),
+                    "货币": data.get("currency", ""),
+                    "总含税金额": data.get("total_amount", ""),
+                }
+                items = data.get("items", [])
+                if not items:
+                    rows.append(base_row)
+                else:
+                    for item in items:
+                        row = base_row.copy()
+                        row.update({
+                            "商品名称": item.get("description", ""),
+                            "数量": item.get("quantity", ""),
+                            "单价": item.get("unit_price", ""),
+                            "金额": item.get("amount", "")
+                        })
+                        rows.append(row)
                     
         df = pd.DataFrame(rows)
         stream = io.BytesIO()

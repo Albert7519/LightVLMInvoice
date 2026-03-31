@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { UploadCloud, FileText, CheckCircle, Download, FileSpreadsheet, Loader } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, FileSpreadsheet, Loader } from 'lucide-react';
 
 // Read API base from environment variables (VITE_API_BASE)
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/v1/invoices';
@@ -187,6 +187,13 @@ function App() {
                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${Math.max(progress, 5)}%` }}></div>
                </div>
                <p className="text-blue-300 animate-pulse font-medium">{message || '加载中...'}</p>
+             </div>
+           )}
+
+           {status === 'FAILED' && (
+             <div className="flex-1 flex flex-col items-center justify-center space-y-6 text-red-400">
+               <div className="text-2xl font-bold">⚠️ 处理失败</div>
+               <p>{message}</p>
              </div>
            )}
 

@@ -56,7 +56,8 @@ def process_invoice_task(self, file_path: str, filename: str):
         for i in range(len(pdf)):
             page = pdf.get_page(i)
             # scale=2 提供 2x 的图片清晰度，控制尺寸在多模态上限下
-            pil_image = page.render_topil(scale=2, rotation=0, crop=(0, 0, 0, 0))
+            bitmap = page.render(scale=2, rotation=0, crop=(0, 0, 0, 0))
+            pil_image = bitmap.to_pil()
             img_path = f"{file_path}_page_{i}.jpg"
             pil_image.save(img_path, "JPEG")
             image_paths.append(img_path)

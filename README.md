@@ -30,6 +30,7 @@
     ├── docker-compose.yml    # 全局容器编排文件
     ├── backend.Dockerfile    # 后端环境构建镜像打包配置
     └── frontend.Dockerfile   # 前端环境构建镜像打包配置
+├── .env.example              # 环境变量配置模板
 ```
 
 ## 核心特性
@@ -65,13 +66,26 @@
    - **后端 API 文档**: `http://localhost:8005/docs`
 
 ### 端口映射说明
-- 前端 Web 界面服务映射在宿主机的 `8002` 端口。
-- 后端 FastAPI 服务映射在宿主机的 `8005` 端口。
-若遇到端口冲突，可直接在 `docker/docker-compose.yml` 中修改。
+- 前端 Web 界面服务映射在宿主机的 `${FRONTEND_PORT:-8002}` 端口。
+- 后端 FastAPI 服务映射在宿主机的 `${BACKEND_PORT:-8005}` 端口。
+若遇到端口冲突，可直接通过根目录的 `.env` 文件设定新端口隔离。
+
+### 高级配置与并发调优 (12-Factor App)
+
+本项目将影响性能与环境的参数统一抽离为 `.env` 环境变量：
+在根目录通过 `cp .env.example .env` 创建配置文件进行调整。
+
+1. **核心并发控制**：
+   - `CELERY_CONCURRENCY=2`：多文件并发处理数。设定 Celery 队列能同时并行解析及向 vLLM 发起提问的文件数（默认 `1`，显存大于16G建议调为 `2` 甚至更高）。
+   - `MAX_CONCURRENT_PAGES=10`：单份发票文件**内部**最大解拆并发线程，例如同时并行处理 10 页 PDF，能压榨极限推理性能。
+2. **更换 VLM 模型与参数**：
+   - `VLLM_MODEL=cyankiwi/Qwen3.5-2B-AWQ...` 可以换用 LLaVA 等。
+   - `VLLM_GPU_MEMORY_UTILIZATION=0.8` (调节占用比例防爆显存)。
+   - `VLLM_MAX_MODEL_LEN=8192` (最大上下文处理长度，降低此值可换取更多并发可用显存)。
 
 ## 二次开发指南
 
-- **更换 VLM 模型**: 如果需要使用如 LLaVA 等其他模型，请在 `docker/docker-compose.yml` 的 `vllm` 启动参数中直接修改模型名称，并视情况在 `backend/tasks.py` 中更新系统 Prompt（大模型提示词）以适配该模型的指令微调格式。
+- **更换 VLM 模型**: 如果需要使用如 LLaVA 等其他模型，除了通过 `.env` 修改模型名称外，可能需要视情况在 `backend/tasks.py` 中更新系统 Prompt（大模型提示词）以适配该模型的指令微调格式。
 - **本地调试前端**:
   ```bash
   cd frontend

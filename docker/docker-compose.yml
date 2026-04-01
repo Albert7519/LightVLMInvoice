@@ -24,15 +24,15 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     command:
-      - cyankiwi/Qwen3.5-2B-AWQ-BF16-INT8
+      - ${VLLM_MODEL:-cyankiwi/Qwen3.5-2B-AWQ-BF16-INT8}
       - --host
       - 0.0.0.0
       - --port
       - "8000"
       - --max-model-len
-      - "8192"
+      - "${VLLM_MAX_MODEL_LEN:-8192}"
       - --gpu-memory-utilization
-      - "0.8"
+      - "${VLLM_GPU_MEMORY_UTILIZATION:-0.8}"
     volumes:
       - huggingface_cache:/root/.cache/huggingface
       - modelscope_cache:/root/.cache/modelscope
@@ -52,12 +52,12 @@ services:
       context: ../backend
       dockerfile: ../docker/backend.Dockerfile
     ports:
-      - "8005:8080"
+      - "${BACKEND_PORT:-8005}:8080"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - VLLM_API_BASE=http://vllm:8000/v1
       - VLLM_API_KEY=EMPTY
-      - MAX_CONCURRENT_PAGES=${MAX_CONCURRENT_PAGES:-5}
+      - MAX_CONCURRENT_PAGES=${MAX_CONCURRENT_PAGES:-10}
       - UVICORN_HOST=0.0.0.0
       - UVICORN_PORT=8080
     volumes:
@@ -78,12 +78,12 @@ services:
     build:
       context: ../backend
       dockerfile: ../docker/backend.Dockerfile
-    command: celery -A celery_app worker --loglevel=info --pool=solo --concurrency=1
+    command: celery -A celery_app worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-2}
     environment:
       - REDIS_URL=redis://redis:6379/0
       - VLLM_API_BASE=http://vllm:8000/v1
       - VLLM_API_KEY=EMPTY
-      - MAX_CONCURRENT_PAGES=${MAX_CONCURRENT_PAGES:-5}
+      - MAX_CONCURRENT_PAGES=${MAX_CONCURRENT_PAGES:-10}
     volumes:
       - ../backend/uploads:/app/backend/uploads
       - ../logs/celery:/app/backend/logs
@@ -102,7 +102,7 @@ services:
       args:
         VITE_API_BASE: /api/v1/invoices
     ports:
-      - "8002:80"
+      - "${FRONTEND_PORT:-8002}:80"
     depends_on:
       backend:
         condition: service_healthy

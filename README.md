@@ -49,8 +49,8 @@
 
 1. **克隆项目**
    ```bash
-   git clone <your-repository-url>
-   cd LocalllmOcrMK2
+   git clone https://github.com/Albert7519/LightVLMInvoice.git
+   cd LightVLMInvoice
    ```
 
 2. **构建并启动所有服务**

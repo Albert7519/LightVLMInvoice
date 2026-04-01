@@ -57,6 +57,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - VLLM_API_BASE=http://vllm:8000/v1
       - VLLM_API_KEY=EMPTY
+      - MAX_CONCURRENT_PAGES=${MAX_CONCURRENT_PAGES:-5}
       - UVICORN_HOST=0.0.0.0
       - UVICORN_PORT=8080
     volumes:
@@ -82,6 +83,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - VLLM_API_BASE=http://vllm:8000/v1
       - VLLM_API_KEY=EMPTY
+      - MAX_CONCURRENT_PAGES=${MAX_CONCURRENT_PAGES:-5}
     volumes:
       - ../backend/uploads:/app/backend/uploads
       - ../logs/celery:/app/backend/logs

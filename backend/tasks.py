@@ -117,7 +117,8 @@ def process_invoice_task(self, file_path: str, filename: str):
     page_results = []
     completed = 0
     # 我们有vLLM高并发加持，可以直接开多个Worker同时发起请求
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    max_workers = int(os.environ.get("MAX_CONCURRENT_PAGES", 5))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(fetch_page, i, p): i for i, p in enumerate(image_paths)}
         for future in as_completed(futures):
             completed += 1

@@ -21,7 +21,6 @@ services:
     environment:
       - VLLM_USE_MODELSCOPE=true
       - MODELSCOPE_CACHE=/root/.cache/modelscope
-      - VLLM_GPU_MEMORY_UTILIZATION=0.7
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     command:
@@ -30,10 +29,10 @@ services:
       - 0.0.0.0
       - --port
       - "8000"
-      - --gpu-memory-utilization
-      - "0.7"
       - --max-model-len
-      - "32768"
+      - "8192"
+      - --gpu-memory-utilization
+      - "0.8"
     volumes:
       - huggingface_cache:/root/.cache/huggingface
       - modelscope_cache:/root/.cache/modelscope

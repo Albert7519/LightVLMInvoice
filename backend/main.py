@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from celery.result import AsyncResult
 from celery_app import celery_app
@@ -42,8 +42,11 @@ async def extract_invoices(files: List[UploadFile] = File(...)):
         file_path = os.path.join(UPLOAD_DIR, f"{file_id}{file_ext}")
         
         with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
             
         # delay() 异步发起Celery任务
         task = process_invoice_task.delay(file_path, file.filename)
@@ -83,6 +86,9 @@ async def get_task_status(task_id: str):
 async def export_invoices(request: Request):
     """接收前端核实后的发票 JSON，生成结构化双表 Excel 表格(Excel 流) 下载"""
     invoice_data = await request.json()
+    if not isinstance(invoice_data, list):
+        return JSONResponse(status_code=400, content={"detail": "导出数据格式错误，期望为 JSON 数组"})
+
     try:
         summary_rows = []
         detail_rows = []

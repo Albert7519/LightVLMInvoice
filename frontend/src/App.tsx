@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { UploadCloud, CheckCircle, Loader, FileSpreadsheet, PlusCircle } from 'lucide-react';
 
@@ -15,6 +15,11 @@ function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [taskIds, setTaskIds] = useState<string[]>([]);
   const [tasksState, setTasksState] = useState<Record<string, TaskState>>({});
+  const tasksStateRef = useRef<Record<string, TaskState>>({});
+
+  useEffect(() => {
+    tasksStateRef.current = tasksState;
+  }, [tasksState]);
   
   // Drag and drop events
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); };
@@ -58,49 +63,62 @@ function App() {
       setTasksState(initialState);
     } catch (err) {
       console.error(err);
-      alert('上传失败，请检查后端运行状态。');
+      if (axios.isAxiosError(err) && err.response?.status === 504) {
+        alert('上传请求超时，但任务可能已提交到后端，请稍后刷新查看状态。');
+      } else {
+        alert('上传失败，请检查后端运行状态。');
+      }
     }
   };
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (taskIds.length > 0) {
-      const checkTasks = async () => {
-        let allDone = true;
-        
-        for (const id of taskIds) {
-          // If already finished or failed, skip polling
-          if (tasksState[id]?.status === 'COMPLETED' || tasksState[id]?.status === 'FAILED') {
-            continue;
-          }
-          
-          allDone = false; // still computing
-          try {
-            const res = await axios.get(`${API_BASE}/status/${id}`);
-            const data = res.data;
-            setTasksState(prev => ({
-              ...prev,
-              [id]: {
-                status: data.status,
-                progress: data.progress,
-                message: data.message || '',
-                result: data.result
-              }
-            }));
-          } catch (err) {
-            console.error("轮询失败", err);
-          }
-        }
-        
-        if (allDone) clearInterval(interval);
-      };
-
-      interval = setInterval(checkTasks, 2000);
-      checkTasks(); // immediate check
+    if (taskIds.length === 0) {
+      return;
     }
 
-    return () => clearInterval(interval);
-  }, [taskIds, tasksState]);
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    const checkTasks = async () => {
+      let allDone = true;
+
+      for (const id of taskIds) {
+        if (tasksStateRef.current[id]?.status === 'COMPLETED' || tasksStateRef.current[id]?.status === 'FAILED') {
+          continue;
+        }
+
+        allDone = false;
+        try {
+          const res = await axios.get(`${API_BASE}/status/${id}`);
+          const data = res.data;
+          setTasksState(prev => ({
+            ...prev,
+            [id]: {
+              status: data.status,
+              progress: data.progress,
+              message: data.message || '',
+              result: data.result
+            }
+          }));
+        } catch (err) {
+          console.error("轮询失败", err);
+        }
+      }
+
+      if (allDone && interval) {
+        clearInterval(interval);
+      }
+    };
+
+    interval = setInterval(() => {
+      void checkTasks();
+    }, 2000);
+
+    void checkTasks();
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [taskIds]);
 
   const exportExcel = async () => {
     const resultsToExport = taskIds.map(id => tasksState[id]?.result).filter(r => r != null);

@@ -68,6 +68,11 @@ def process_invoice_task(self, file_path: str, filename: str):
             pil_image.save(img_path, "JPEG")
             image_paths.append(img_path)
             page.close()
+            curr_prog = 20 + int(10 * (i + 1) / len(pdf))
+            self.update_state(
+                state='PROCESSING',
+                meta={'progress': curr_prog, 'message': f'PDF分页渲染中... ({i + 1}/{len(pdf)})'}
+            )
         pdf.close()
     elif ext in ['.jpg', '.jpeg', '.png', '.webp']:
         image_paths.append(file_path)

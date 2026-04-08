@@ -130,12 +130,18 @@ function App() {
       const res = await axios.post(`${API_BASE}/export`, resultsToExport, {
         responseType: 'blob'
       });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const contentType = res.headers['content-type'] || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: contentType }));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'invoice_export.xlsx');
       document.body.appendChild(link);
       link.click();
+      // 不要立即释放 URL，避免部分浏览器仍在写入下载文件时中断导致 .crdownload 卡住
+      setTimeout(() => {
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }, 60_000);
     } catch (err) {
       console.error(err);
       alert("导出失败");

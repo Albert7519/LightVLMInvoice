@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from celery.result import AsyncResult
 from celery_app import celery_app
@@ -167,10 +167,11 @@ async def export_invoices(request: Request):
                 adjusted_width = min(max_length + 2, 80)
                 ws_details.column_dimensions[column].width = adjusted_width
 
-        stream.seek(0)
+        data = stream.getvalue()
         headers = {
-            'Content-Disposition': 'attachment; filename="invoices_export.xlsx"'
+            'Content-Disposition': 'attachment; filename="invoices_export.xlsx"',
+            'Content-Length': str(len(data))
         }
-        return StreamingResponse(stream, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        return Response(content=data, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

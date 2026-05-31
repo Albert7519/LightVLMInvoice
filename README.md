@@ -2,6 +2,12 @@
 
 基于本地视觉大语言模型 (Vision Large Language Model) 的文档/发票结构化信息提取系统。本项目旨在通过本地部署的 VLM 直接对复杂版式（包含多页复合 PDF 或单张图片）进行解析，无需依赖外部 API，保障业务数据的隐私与资产安全。
 
+## Why this project matters
+
+Many small teams, students, and individual developers need invoice or document OCR, but hosted OCR APIs can be costly, difficult to customize, or unsuitable for sensitive financial documents. LightVLMInvoice provides a fully local, Dockerized VLM-based extraction pipeline with asynchronous processing, JSON repair, configurable concurrency, and a clear full-stack structure.
+
+The project is intended as a reproducible open-source reference for privacy-preserving document automation: users can run extraction locally, adapt prompts and models, and inspect the full backend, worker, frontend, and deployment stack.
+
 ## 架构与技术栈
 
 系统采用前后端分离架构，核心处理流程结合了异步任务队列以应对大模型高耗时推理的特性。
@@ -93,6 +99,25 @@
   npm run dev
   ```
 
+## OSS Maintainer Workflow
+
+This repository is maintained as an open-source project. Planned maintainer workflows include:
+
+- issue triage for deployment, parsing, model-output, and frontend problems;
+- reproducible bug reports with sanitized or synthetic sample files;
+- pull request review across FastAPI backend code, Celery workers, Docker configuration, and React frontend code;
+- release notes for user-visible behavior, deployment changes, and model/prompt changes;
+- documentation updates for local deployment, privacy constraints, and model substitution.
+
+## Roadmap
+
+- Add synthetic sample invoices and expected structured outputs.
+- Add automated tests for PDF splitting, image conversion, JSON repair, and API responses.
+- Add stricter output schema validation.
+- Improve frontend error reporting and batch-processing status display.
+- Document recommended vLLM settings for different GPU memory sizes.
+- Publish tagged releases with changelogs.
+
 ## 开源协议 (License)
 
-TBD
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
